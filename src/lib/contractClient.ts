@@ -338,3 +338,45 @@ export async function getSwapsBySeller(sellerAddress) {
   if (!Array.isArray(arr)) return [];
   return arr.map((v) => Number(v));
 }
+
+// ─── USDC Balance ─────────────────────────────────────────────────────────────
+
+const USDC_CONTRACT_ID = import.meta.env.VITE_CONTRACT_USDC ?? "";
+const USDC_DECIMALS = 7;
+
+/**
+ * Fetch the USDC balance for a given address by calling `balance(address)`
+ * on the USDC token contract.
+ * @param {string} address - Stellar public key (G...)
+ * @returns {Promise<number>} - Balance in human-readable USDC (e.g. 12.5)
+ */
+export async function getUsdcBalance(address: string): Promise<number> {
+  if (!USDC_CONTRACT_ID) return 0;
+
+  const server = new StellarSdk.SorobanRpc.Server(RPC_URL);
+  const keypair = StellarSdk.Keypair.random();
+  const account = new StellarSdk.Account(keypair.publicKey(), "0");
+  const contract = new StellarSdk.Contract(USDC_CONTRACT_ID);
+
+  const tx = new StellarSdk.TransactionBuilder(account, {
+    fee: StellarSdk.BASE_FEE,
+    networkPassphrase: networkPassphrase(),
+  })
+    .addOperation(
+      contract.call(
+        "balance",
+        StellarSdk.nativeToScVal(new StellarSdk.Address(address), { type: "address" })
+      )
+    )
+    .setTimeout(30)
+    .build();
+
+  const result = await server.simulateTransaction(tx);
+  if (StellarSdk.SorobanRpc.Api.isSimulationError(result)) return 0;
+
+  const retval = result.result?.retval;
+  if (!retval) return 0;
+
+  const raw = StellarSdk.scValToNative(retval);
+  return Number(raw) / Math.pow(10, USDC_DECIMALS);
+}
