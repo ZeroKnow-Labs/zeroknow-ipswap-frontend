@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { getSwapsByBuyer, getSwap, getLedgerTimestamp } from "../lib/contractClient";
+import { getSwapsByBuyer, getSwapsBySeller, getSwap, getLedgerTimestamp } from "../lib/contractClient";
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -15,7 +15,7 @@ export interface Swap {
   decryption_key: string | null;
 }
 
-export function useMySwaps(buyerAddress: string | null) {
+export function useMySwaps(walletAddress: string | null) {
   const [swaps, setSwaps] = useState<Swap[]>([]);
   const [ledgerTimestamp, setLedgerTimestamp] = useState<number>(
     () => Math.floor(Date.now() / 1000)
@@ -25,17 +25,20 @@ export function useMySwaps(buyerAddress: string | null) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchSwaps = useCallback(async () => {
-    if (!buyerAddress) { setSwaps([]); return; }
+    if (!walletAddress) { setSwaps([]); return; }
     setLoading(true);
     setError(null);
     try {
-      const [ids, ts] = await Promise.all([
-        getSwapsByBuyer(buyerAddress),
+      const [buyerIds, sellerIds, ts] = await Promise.all([
+        getSwapsByBuyer(walletAddress),
+        getSwapsBySeller(walletAddress).catch(() => [] as number[]),
         getLedgerTimestamp(),
       ]);
       setLedgerTimestamp(ts);
-      if (ids.length === 0) { setSwaps([]); return; }
-      const results = await Promise.allSettled(ids.map((id) => getSwap(id)));
+      // Deduplicate IDs (a wallet could theoretically be both buyer and seller)
+      const allIds = [...new Set([...buyerIds, ...sellerIds])];
+      if (allIds.length === 0) { setSwaps([]); return; }
+      const results = await Promise.allSettled(allIds.map((id) => getSwap(id)));
       const loaded = results
         .filter((r): r is PromiseFulfilledResult<Swap> => r.status === "fulfilled" && r.value !== null)
         .map((r) => r.value);
@@ -45,7 +48,7 @@ export function useMySwaps(buyerAddress: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [buyerAddress]);
+  }, [walletAddress]);
 
   useEffect(() => {
     fetchSwaps();
