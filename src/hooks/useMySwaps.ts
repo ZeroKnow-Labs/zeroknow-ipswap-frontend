@@ -53,7 +53,28 @@ export function useMySwaps(walletAddress: string | null) {
   useEffect(() => {
     fetchSwaps();
     timerRef.current = setInterval(fetchSwaps, POLL_INTERVAL_MS);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+
+    // Optimization: pause polling when the tab is hidden to avoid unnecessary RPC calls
+    // and reduce battery consumption on mobile devices
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      } else {
+        // Tab became visible again, fetch immediately and restart polling
+        fetchSwaps();
+        timerRef.current = setInterval(fetchSwaps, POLL_INTERVAL_MS);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [fetchSwaps]);
 
   return { swaps, ledgerTimestamp, loading, error, refresh: fetchSwaps };
