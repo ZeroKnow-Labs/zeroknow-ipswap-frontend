@@ -1,14 +1,20 @@
 import * as StellarSdk from "@stellar/stellar-sdk";
+import {
+  CONTRACT_ATOMIC_SWAP,
+  CONTRACT_IP_REGISTRY,
+  CONTRACT_ZK_VERIFIER,
+  CONTRACT_USDC,
+  STELLAR_NETWORK,
+  STELLAR_RPC_URL,
+} from "./contracts";
 
-const RPC_URL =
-  import.meta.env.VITE_STELLAR_RPC_URL ||
-  "https://soroban-testnet.stellar.org";
+const RPC_URL = STELLAR_RPC_URL;
 
-const ATOMIC_SWAP_CONTRACT_ID = import.meta.env.VITE_CONTRACT_ATOMIC_SWAP;
-const IP_REGISTRY_CONTRACT_ID = import.meta.env.VITE_CONTRACT_IP_REGISTRY;
+const ATOMIC_SWAP_CONTRACT_ID = CONTRACT_ATOMIC_SWAP;
+const IP_REGISTRY_CONTRACT_ID = CONTRACT_IP_REGISTRY;
 
 const networkPassphrase = () =>
-  import.meta.env.VITE_STELLAR_NETWORK === "mainnet"
+  STELLAR_NETWORK === "mainnet"
     ? StellarSdk.Networks.PUBLIC
     : StellarSdk.Networks.TESTNET;
 
@@ -341,7 +347,7 @@ export async function getSwapsBySeller(sellerAddress) {
 
 // ─── USDC Balance ─────────────────────────────────────────────────────────────
 
-const USDC_CONTRACT_ID = import.meta.env.VITE_CONTRACT_USDC ?? "";
+const USDC_CONTRACT_ID = CONTRACT_USDC;
 const USDC_DECIMALS = 7;
 
 /**
@@ -383,7 +389,7 @@ export async function getUsdcBalance(address: string): Promise<number> {
 
 // ─── ZK Verifier ──────────────────────────────────────────────────────────────
 
-const ZK_VERIFIER_CONTRACT_ID = import.meta.env.VITE_CONTRACT_ZK_VERIFIER ?? "";
+const ZK_VERIFIER_CONTRACT_ID = CONTRACT_ZK_VERIFIER;
 
 async function simulateZkView(
   functionName: string,
