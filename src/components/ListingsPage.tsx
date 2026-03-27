@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ShoppingCart, Loader2, AlertTriangle } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { ShoppingCart, Loader2, AlertTriangle, Search, Filter } from "lucide-react";
+import { useDebounce } from "../lib/debounce";
 
 interface Listing {
   id: number;
   ipfs_hash: string;
   owner: string;
   price: number;
+  status: 'available' | 'pending' | 'sold';
 }
 
 const mockListings: Listing[] = [
@@ -15,20 +17,38 @@ const mockListings: Listing[] = [
     ipfs_hash: "QmXyZ12345abcdefghijkLMNOPQRSTUVWXYZabcdef",
     owner: "GABCDEFGHJKLMNPQRSTUVXYZ23456789ABCDEFGHJK",
     price: 120,
+    status: 'available',
   },
   {
     id: 2,
     ipfs_hash: "QmZyX54321mnopqrstuVWXYZabcdef1234567890",
     owner: "GABCDE1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ",
     price: 225,
+    status: 'pending',
   },
   {
     id: 3,
     ipfs_hash: "QmLmnopQRStuvwxyZABCDEF1234567890ghijklmnop",
     owner: "G1234567890ABCDEFGHJKLMNPQRSTUVWXYZabcdef",
     price: 89,
+    status: 'sold',
+  },
+  {
+    id: 4,
+    ipfs_hash: "QmNew45678newipfshashforlistingfour",
+    owner: "GNEWOWNER1234567890ABCDEF",
+    price: 150,
+    status: 'available',
+  },
+  {
+    id: 5,
+    ipfs_hash: "QmFive99999fivehashhere",
+    owner: "GABCDE9999999999ABCDEF",
+    price: 300,
+    status: 'available',
   },
 ];
+
 
 function truncateHash(hash: string): string {
   if (!hash) return "";
@@ -51,11 +71,40 @@ async function fetchListings(): Promise<Listing[]> {
 }
 
 export function ListingsPage() {
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [allListings, setAllListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const initialSearch = searchParams.get('search') || '';
+  const initialStatus = searchParams.get('status') || 'all';
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'pending' | 'sold'>(initialStatus as any);
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Filtered listings
+  const filteredListings = useMemo(() => {
+    return allListings.filter((listing) => {
+      const searchLower = debouncedSearch.toLowerCase();
+      const matchesSearch = debouncedSearch === '' || 
+        listing.id.toString().includes(debouncedSearch) ||
+        listing.owner.toLowerCase().includes(searchLower) ||
+        listing.ipfs_hash.toLowerCase().includes(searchLower);
+      const matchesStatus = statusFilter === 'all' || listing.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [allListings, debouncedSearch, statusFilter]);
+
+  // Update URL params when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    setSearchParams(params, { replace: true });
+  }, [debouncedSearch, statusFilter, searchQuery, setSearchParams]);
+
+  // Load listings
   useEffect(() => {
     let mounted = true;
 
@@ -65,7 +114,7 @@ export function ListingsPage() {
       try {
         const data = await fetchListings();
         if (mounted) {
-          setListings(data);
+          setAllListings(data);
         }
       } catch (err) {
         if (mounted) {
@@ -85,96 +134,90 @@ export function ListingsPage() {
     };
   }, []);
 
+
   const content = () => {
-    if (loading) {
-      return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div
-              key={n}
-              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm animate-pulse"
-            >
-              <div className="h-5 w-2/3 bg-slate-200 mb-3 rounded" />
-              <div className="h-4 w-1/2 bg-slate-200 mb-2 rounded" />
-              <div className="h-4 w-3/4 bg-slate-200 mb-3 rounded" />
-              <div className="h-10 w-full bg-slate-200 rounded" />
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="rounded-xl border border-red-300 bg-red-50 p-6 text-red-700">
-          <div className="flex items-center gap-2 font-medium">
-            <AlertTriangle size={18} /> Error
-          </div>
-          <p className="mt-2">{error}</p>
-          <button
-            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-200"
-            onClick={() => {
-              setError(null);
-              setLoading(true);
-              fetchListings()
-                .then((data) => setListings(data))
-                .catch(() => setError("Unable to refresh listings."))
-                .finally(() => setLoading(false));
-            }}
-          >
-            Retry
-          </button>
-        </div>
-      );
-    }
-
-    if (listings.length === 0) {
+    if (filteredListings.length === 0) {
       return (
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-slate-700">
-          <p>No listings found yet.</p>
-          <p className="text-sm text-slate-500">Check back soon or connect your indexer.</p>
+          <p>No listings match your filters.</p>
+          <p className="text-sm text-slate-500">Try adjusting your search or status filter.</p>
         </div>
       );
     }
 
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {listings.map((listing) => (
-          <article
-            key={listing.id}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md"
-          >
-            <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
-              <span>Listing #{listing.id}</span>
-              <span>{listing.price} USDC</span>
-            </div>
-
-            <div className="mb-3">
-              <p className="text-xs text-slate-400">IPFS Hash</p>
-              <p className="truncate text-sm font-medium text-slate-800" title={listing.ipfs_hash}>
-                {truncateHash(listing.ipfs_hash)}
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-xs text-slate-400">Owner</p>
-              <p className="truncate text-sm text-slate-700" title={listing.owner}>
-                {truncateAddress(listing.owner)}
-              </p>
-            </div>
-
-            <button
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              onClick={() => navigate(`/swap/${listing.id}`)}
+      <div>
+        <p className="mb-4 text-sm text-slate-500">
+          Showing {filteredListings.length} of {allListings.length} listings
+        </p>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredListings.map((listing: Listing) => (
+            <article
+              key={listing.id}
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md"
             >
-              <ShoppingCart size={16} />
-              Buy Now
-            </button>
-          </article>
-        ))}
+              <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+                <span>Listing #{listing.id}</span>
+                <span>{listing.price} USDC</span>
+              </div>
+
+              <div className="mb-3">
+                <p className="text-xs text-slate-400">IPFS Hash</p>
+                <p className="truncate text-sm font-medium text-slate-800" title={listing.ipfs_hash}>
+                  {truncateHash(listing.ipfs_hash)}
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-xs text-slate-400">Owner</p>
+                <p className="truncate text-sm text-slate-700" title={listing.owner}>
+                  {truncateAddress(listing.owner)}
+                </p>
+              </div>
+
+              <button
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                onClick={() => navigate(`/swap/${listing.id}`)}
+              >
+                <ShoppingCart size={16} />
+                Buy Now
+              </button>
+            </article>
+          ))}
+        </div>
       </div>
     );
   };
+
+
+  // Filters UI
+  const filters = (
+    <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
+        <input
+          type="search"
+          placeholder="Search by owner, listing ID, or IPFS hash..."
+          className="w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <Filter className="text-slate-400 h-4 w-4 flex-shrink-0" />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as any)}
+          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+        >
+          <option value="all">All Statuses</option>
+          <option value="available">Available</option>
+          <option value="pending">Swap Pending</option>
+          <option value="sold">Sold</option>
+        </select>
+      </div>
+    </div>
+  );
 
   return (
     <section className="mx-auto max-w-7xl p-4">
@@ -190,7 +233,9 @@ export function ListingsPage() {
         )}
       </div>
 
+      {!loading && !error && filters}
       {content()}
     </section>
   );
+
 }
