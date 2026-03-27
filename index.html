@@ -10,6 +10,8 @@
     <div class="container">
         <header class="site-header">
             <h1>Atomic-IP Marketplace</h1>
+            <!-- React network selector mounts here -->
+            <div id="network-root"></div>
             <!-- React wallet connect button mounts here -->
             <div id="wallet-root"></div>
         </header>
@@ -46,6 +48,9 @@
         <div id="dashboard-root"></div>
         <div id="listings-dashboard-root"></div>
 
+        <!-- My Listings Dashboard (React) -->
+        <div id="listings-dashboard-root"></div>
+
         <!-- Key Reveal Section (existing) -->
         <section id="keyReveal">
             <h2>Reveal Decryption Key</h2>
@@ -78,8 +83,8 @@
 
         <p>Network: <span id="rpcUrl">https://soroban-testnet.stellar.org/soroban/rpc</span></p>
     </div>
-    <script src="app.js"></script>
-    <script type="module" src="src/main.jsx"></script>
+    <script type="module" src="app.js"></script>
+    <script type="module" src="src/main.tsx"></script>
 </body>
 </html>
 
