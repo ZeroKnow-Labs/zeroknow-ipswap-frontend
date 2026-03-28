@@ -4,6 +4,7 @@ import type { ProofNode } from "../lib/contractClient";
 import type { Wallet } from "../lib/walletKit";
 import type { Swap } from "../hooks/useMySwaps";
 import "./ConfirmSwapForm.css";
+import { CopyButton } from "./CopyButton";
 
 const USDC_DECIMALS = 7;
 
@@ -27,7 +28,9 @@ function parseProofPath(raw: string): ProofNode[] {
     }
     const hex = node.sibling.replace(/^0x/, "");
     if (hex.length !== 64) {
-      throw new Error(`ProofNode[${i}].sibling must be 64 hex chars (32 bytes), got ${hex.length}.`);
+      throw new Error(
+        `ProofNode[${i}].sibling must be 64 hex chars (32 bytes), got ${hex.length}.`,
+      );
     }
     return { sibling: hex, is_left: node.is_left };
   });
@@ -137,7 +140,9 @@ export function ConfirmSwapForm({ swap, wallet, onSuccess }: Props) {
         disabled={loading || !isFormValid}
         aria-busy={loading}
       >
-        {loading && <span className="confirm-swap-spinner" aria-hidden="true" />}
+        {loading && (
+          <span className="confirm-swap-spinner" aria-hidden="true" />
+        )}
         {loading ? "Confirming…" : "Confirm & Release USDC"}
       </button>
     </form>

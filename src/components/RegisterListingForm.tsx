@@ -3,6 +3,7 @@ import { registerIp } from "../lib/contractClient";
 import type { Wallet } from "../lib/walletKit"; // Adjust if wallet type differs
 import type { Wallet } from "../lib/walletKit";
 import "./RegisterListingForm.css";
+import { CopyButton } from "./CopyButton";
 
 interface Props {
   wallet: Wallet;
@@ -237,7 +238,7 @@ export function RegisterListingForm({ wallet, onSuccess, onCancel }: Props) {
         parseInt(formData.royaltyBps, 10),
         formData.royaltyRecipient,
         parseFloat(formData.priceUsdc),
-        wallet
+        wallet,
       );
       setStatus("success");
       if (onSuccess) {
@@ -245,7 +246,11 @@ export function RegisterListingForm({ wallet, onSuccess, onCancel }: Props) {
       }
     } catch (err) {
       setStatus("error");
-      setSubmitError(err instanceof Error ? err.message : "Transaction failed. Please try again.");
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : "Transaction failed. Please try again.",
+      );
     }
   };
 
@@ -267,7 +272,9 @@ export function RegisterListingForm({ wallet, onSuccess, onCancel }: Props) {
 
       {status === "success" ? (
         <div className="rlf__success">
-          <span className="rlf__success-icon" aria-hidden="true">✓</span>
+          <span className="rlf__success-icon" aria-hidden="true">
+            ✓
+          </span>
           <p>IP registered successfully!</p>
         </div>
       ) : (
@@ -308,7 +315,9 @@ export function RegisterListingForm({ wallet, onSuccess, onCancel }: Props) {
               placeholder="e.g. 0xa3f1...c9d2 (64 hex chars)"
               maxLength={66}
               spellCheck={false}
-              aria-describedby={errors.merkleRoot ? "merkle-root-error" : undefined}
+              aria-describedby={
+                errors.merkleRoot ? "merkle-root-error" : undefined
+              }
             />
             {errors.merkleRoot && <p id="merkle-root-error" className="rlf__error" role="alert">{errors.merkleRoot}</p>}
           </div>
@@ -327,7 +336,9 @@ export function RegisterListingForm({ wallet, onSuccess, onCancel }: Props) {
               onChange={handleChange("priceUsdc")}
               onBlur={handleBlur("priceUsdc")}
               placeholder="e.g. 10.00"
-              aria-describedby={errors.priceUsdc ? "price-usdc-error" : undefined}
+              aria-describedby={
+                errors.priceUsdc ? "price-usdc-error" : undefined
+              }
             />
             {errors.priceUsdc && <p id="price-usdc-error" className="rlf__error" role="alert">{errors.priceUsdc}</p>}
           </div>
@@ -347,7 +358,9 @@ export function RegisterListingForm({ wallet, onSuccess, onCancel }: Props) {
                 onChange={handleChange("royaltyBps")}
                 onBlur={handleBlur("royaltyBps")}
                 placeholder="e.g. 2500 = 25%"
-                aria-describedby={errors.royaltyBps ? "royalty-bps-error" : undefined}
+                aria-describedby={
+                  errors.royaltyBps ? "royalty-bps-error" : undefined
+                }
               />
               {errors.royaltyBps && <p id="royalty-bps-error" className="rlf__error" role="alert">{errors.royaltyBps}</p>}
               <span className="rlf__hint">10000 BPS = 100%</span>
@@ -369,7 +382,13 @@ export function RegisterListingForm({ wallet, onSuccess, onCancel }: Props) {
                 aria-describedby={errors.royaltyRecipient ? "royalty-recipient-error" : undefined}
               />
               {errors.royaltyRecipient && (
-                <p id="royalty-recipient-error" className="rlf__error" role="alert">{errors.royaltyRecipient}</p>
+                <p
+                  id="royalty-recipient-error"
+                  className="rlf__error"
+                  role="alert"
+                >
+                  {errors.royaltyRecipient}
+                </p>
               )}
             </div>
           </div>
