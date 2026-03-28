@@ -327,7 +327,6 @@ export async function initiateSwap(
   sellerAddress: string,
   usdcContractId: string,
   usdcAmount: bigint,
-  zkVerifierId: string,
   wallet: {
     address: string;
     signTransaction: (xdr: string) => Promise<string>;
@@ -348,21 +347,17 @@ export async function initiateSwap(
     .addOperation(
       contract.call(
         "initiate_swap",
+        StellarSdk.nativeToScVal(listingId, { type: "u64" }), // listing_id
         StellarSdk.nativeToScVal(new StellarSdk.Address(wallet.address), {
           type: "address",
         }), // buyer
         StellarSdk.nativeToScVal(new StellarSdk.Address(sellerAddress), {
           type: "address",
         }), // seller
-        StellarSdk.nativeToScVal(listingId, { type: "u64" }), // listing_id
         StellarSdk.nativeToScVal(new StellarSdk.Address(usdcContractId), {
           type: "address",
-        }), // usdc_contract
+        }), // usdc_token
         StellarSdk.nativeToScVal(usdcAmount, { type: "i128" }), // usdc_amount
-        StellarSdk.nativeToScVal(new StellarSdk.Address(zkVerifierId), {
-          type: "address",
-        }), // zk_verifier
-        StellarSdk.nativeToScVal(null, { type: "scvVoid" }), // encryption_pubkey (can be updated later)
       ),
     )
     .setTimeout(30)
