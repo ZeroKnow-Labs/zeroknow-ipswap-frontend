@@ -1,11 +1,21 @@
-# Atomic IP Marketplace — Frontend
+# ZeroKnow IPSwap — Frontend
+
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
 React + TypeScript frontend for the Atomic IP Marketplace on Stellar.
+
+**Organization:** [ZeroKnow-Labs](https://github.com/ZeroKnow-Labs)  
+**Repository:** [zeroknow-ipswap-frontend](https://github.com/ZeroKnow-Labs/zeroknow-ipswap-frontend)
 
 ## Prerequisites
 
 - Node.js v18+
-- Deployed contract IDs (from the `contracts` repo)
+- Deployed contract IDs (from the [contracts repo](https://github.com/ZeroKnow-Labs/zeroknow-ipswap-contracts))
+
+## Related Repositories
+
+- **[zeroknow-ipswap-contracts](https://github.com/ZeroKnow-Labs/zeroknow-ipswap-contracts)** — Soroban smart contracts
+- **[zeroknow-ipswap-docs](https://github.com/ZeroKnow-Labs/zeroknow-ipswap-docs)** — Documentation
 
 ## Setup
 
