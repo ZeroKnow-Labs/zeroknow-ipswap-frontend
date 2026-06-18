@@ -7,6 +7,17 @@ React + TypeScript frontend for the Atomic IP Marketplace on Stellar.
 **Organization:** [ZeroKnow-Labs](https://github.com/ZeroKnow-Labs)  
 **Repository:** [zeroknow-ipswap-frontend](https://github.com/ZeroKnow-Labs/zeroknow-ipswap-frontend)
 
+## Overview
+
+React + TypeScript frontend for the Atomic IP Marketplace on **Stellar**.
+
+**Stellar Integration:**
+- 🌟 **Soroban RPC** — Direct smart contract interaction via Stellar RPC
+- 👛 **Multi-Wallet Support** — Freighter, xBull, Lobstr wallet integration via `stellar-wallets-kit`
+- 💰 **USDC Transfers** — Token approval and atomic swap execution on Stellar
+- 🔗 **Contract Clients** — Auto-generated TypeScript bindings for Soroban contracts
+- 📡 **Network Support** — Testnet and Mainnet compatibility
+
 ## Prerequisites
 
 - Node.js v18+
